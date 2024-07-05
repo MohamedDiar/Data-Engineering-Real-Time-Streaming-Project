@@ -1,0 +1,37 @@
+{
+    "user_generation": {
+        "total_users": 200,
+        "age_range": [18, 90]
+    },
+    "doctor_generation": {
+        "total_doctors": 50
+    },
+    "medical_info_generation": {
+        "glucose_range": {
+            "min": [65, 105],
+            "max": [145, 185]
+        }
+    },
+    "device_generation": {
+        "total_devices": 200
+    },
+    "subscriber_generation": {
+        "total_subscribers": 120,
+        "max_additional_doctors_per_user": 2
+    },
+    "device_settings_generation": {
+        "data_transmission_interval": [1, 4]
+    },
+    "manufacturer_generation": {
+        "total_manufacturers": 15
+    },
+
+    "quick_generation_conf": {
+        "start_date": "2024-06-01",
+        "num_days": 45,
+        "interval_minutes": 15,
+        "min_glucose": 70,
+        "max_glucose": 150,
+        "chunk_size": 20000
+    }
+}

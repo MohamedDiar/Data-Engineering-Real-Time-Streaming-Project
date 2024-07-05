@@ -1,0 +1,1 @@
+EXPORT DATABASE 'abfs://glucosefeeds/glucose_dimensional_model' (FORMAT PARQUET);

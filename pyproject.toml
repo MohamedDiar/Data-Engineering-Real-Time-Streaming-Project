@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "stream-cleanup"
+version = "0.1.0"
+description = ""
+authors = ["Mohamed <MohamedDiar>"]
+readme = "README.md"
+
+packages = [
+    { include = "Simulation", from = "src" },
+    { include = "Tables_Preparation", from = "src" },
+    { include = "Telegram_Setup", from = "src" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+python-dotenv = "^1.0.1"
+mysql-connector-python = "^8.4.0"
+faker = "^25.2.0"
+duckdb = "^0.10.3"
+fsspec = "^2024.5.0"
+adlfs = "^2024.4.1"
+azure-eventhub = "^5.12.0"
+telethon = "^1.35.0"
+watchdog = "^4.0.1"
+beautifulsoup4 = "^4.12.3"
+requests = "^2.32.3"
+redis = "^5.0.4"
+altair="4.0"
+numpy = "*"
+streamlit = "*"
+azure-eventhub-checkpointstoreblob-aio="1.1.4"
+pandas = "*"
+plotly-express = "^0.4.1"
+tabulate = "^0.9.0"
+streamlit-aggrid = "^1.0.5"
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
