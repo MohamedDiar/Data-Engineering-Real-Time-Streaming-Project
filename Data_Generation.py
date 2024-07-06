@@ -120,7 +120,7 @@ def generate_data():
     # Generate device records
     next_file_seq_device = new_dataset(
         next_file_seq_device,
-        record_count=10,
+        record_count=300,
         generate_record_func=generate_device_record,
         data_source=device_records,
     )
@@ -128,7 +128,7 @@ def generate_data():
     # Generate patient records
     next_file_seq_patient = new_dataset(
         next_file_seq_patient,
-        record_count=20,
+        record_count=800,
         generate_record_func=generate_metric_record,
         data_source=records,
     )
@@ -145,7 +145,7 @@ def continuous_data_generation():
     print("Generating data continuously")
     while True:
         generate_data()
-        time.sleep(6)
+        time.sleep(15)
 
 
 if __name__ == "__main__":
