@@ -530,9 +530,9 @@ Azure Blob Storage is a cloud storage solution for storing massive amounts of un
 ## Debezium
 Debezium is a set of distributed services that capture row-level changes in your databases so that your applications can see and respond to those changes. Debezium records in a transaction log all row-level changes committed to each database table. Each application simply reads the transaction logs they’re interested in, and they see all of the events in the same order in which they occurred. The term used to describe a system or platform like Debezium which monitors and captures the changes in data so that other software can respond to those changes is called **Change Data Capture(CDC)**. The primary use of Debezium is to enable applications to respond almost immediately whenever data in databases change. Applications can do anything with the insert, update, and delete events. And since in this project I created cache with data from the database, there is a need to maintain the data in the cache and the data in the database in sync. Debezium allows the relevant changes like the the information of a new patient being added to the database to be captured and then respond to those changes by updating the cache.
 
-Link to the Debezium website: [Debezium](https://debezium.io/)
+**Link to the Debezium website:** [Debezium](https://debezium.io/)
 
-Link to the Debezium Architecture: [Debezium Architecture](https://debezium.io/documentation/reference/stable/architecture.html)
+**Link to the Debezium Architecture:** [Debezium Architecture](https://debezium.io/documentation/reference/stable/architecture.html)
 
 ### Source Connector
 In Debezium, a source connector is a component that captures changes from a specific database system and streams those changes to downstream messaging infrastructures like kafka. Debezium has several connectors for different databases such as MySQL, PostgreSQL, SQL Server, MongoDB, and others. In this project, I used the Debezium MySQL connector to capture changes in the MySQL database. It monitors the **binlog** of the MySQL database and generates change events for the operations it has been configured to capture. 
@@ -543,7 +543,7 @@ Debezium server is another way to deploy Debezium connectors. The Debezium serve
 ## DuckDB
 DuckDB is an in-process  embeddable SQL OLAP database management system. It is designed to perform analytical queries on large datasets efficiently while being lightweight and simple to integrate into various applications. It operates within the application process, much like SQLite, meaning it does not require a separate server process. This makes it easy to embed in applications without the overhead of managing a separate database server. Also, it can integrate with various data formats and sources. It supports extensions for different data connectors, including Parquet, CSV, and databases like MySQL. This extensibility makes it a versatile choice for various data workflows.
 
-Link to the DuckDB website: [DuckDB](https://www.duckdb.org/)
+**Link to the DuckDB website:** [DuckDB](https://www.duckdb.org/)
 
 ### Role Of DuckDB And Design Considerations
 The decision to use DuckDB in this project had an impact on the design choices I made for the batch processing pipeline architecture. Specifically in terms of  in how the data warehouse is managed and how ETL processes are executed. Because of DuckDB's ability to directly read and write to cloud-based object storage like AWS S3 and Azure Blob Storage, I decided in this project to use it to create and store the entire data warehouse database (called glucose_dimensional_model) as Parquet files in Azure Blob Storage. This provides major benefits in terms of:
