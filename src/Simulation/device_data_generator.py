@@ -9,6 +9,34 @@ import random
 from .data_initialization_config import devices, fake, simulation_duration
 
 
+def determine_connection_status(device_id, timestamp, disconnection_periods):
+    """
+    Determine the connection status of a device at a given timestamp.
+
+    Args:
+        device_id (str): The ID of the device.
+        timestamp (datetime.datetime): The timestamp to check the connection status.
+        disconnection_periods (dict): A dictionary containing the disconnection periods for each device.
+    
+    Returns:
+        str: The connection status of the device ("Connected" or "Disconnected").
+    """
+    
+    if random.random() < 0.1:  # 10% chance to disconnect
+        disconnection_duration = random.randint(1, 3)  # Random disconnection duration in minutes
+        new_period = {
+            "start": timestamp,
+            "end": timestamp + datetime.timedelta(minutes=disconnection_duration),
+        }
+        if device_id in disconnection_periods:
+            disconnection_periods[device_id].append(new_period)
+        else:
+            disconnection_periods[device_id] = [new_period]
+        return "Disconnected"
+    else:
+        return "Connected"
+
+
 def generate_device_record(device_id, timestamp, disconnection_periods):
     """
     Generate a device record with the given device ID, timestamp, and disconnection periods.
@@ -38,23 +66,15 @@ def generate_device_record(device_id, timestamp, disconnection_periods):
 
     # We are Checking if the device is currently in a disconnection period
     # The device will remain disconnected for a random duration between 1 and 3 minutes
-    if (
-        device_id in disconnection_periods
-        and disconnection_periods[device_id]["start"]<= timestamp <= disconnection_periods[device_id]["end"]
-    ):
-        connection_status = "Disconnected"
-    else:
-        if random.random() < 0.1:  # 10% chance to disconnect
-            disconnection_duration = random.randint(
-                1, 3
-            )  # Random disconnection duration in minutes
-            disconnection_periods[device_id] = {
-                "start": timestamp,
-                "end": timestamp + datetime.timedelta(minutes=disconnection_duration),
-            }
+    if device_id in disconnection_periods and disconnection_periods[device_id]:
+        latest_period = disconnection_periods[device_id][-1]  # Getting the most recent period
+        # Checking if the timestamp falls within the disconnection period
+        if latest_period["start"] <= timestamp <= latest_period["end"]:
             connection_status = "Disconnected"
         else:
-            connection_status = "Connected"
+            connection_status = determine_connection_status(device_id, timestamp, disconnection_periods)
+    else:
+        connection_status = determine_connection_status(device_id, timestamp, disconnection_periods)
 
     # Assign error code
     if connection_status == "Connected":
@@ -71,21 +91,18 @@ def generate_device_record(device_id, timestamp, disconnection_periods):
         "firmware_version": device["firmware_info"]["version"],
         "connection_status": connection_status,
         "error_code": error_code,
-        "timestamp": timestamp.strftime(
-            "%Y-%m-%dT%H:%M:%S"
-        ),
+        "timestamp": timestamp.strftime("%Y-%m-%dT%H:%M:%S"),
     }
 
-# Initialize the disconnection periods for each device
+
+# Initializing the disconnection periods for each device
 disconnection_periods = {}
 
-
-# Define the interval for records in minutes.
+# The interval at which records are generated in minutes
 record_interval = 1
 
-# We start the simulation at the current time
+# Setting the start time of the simulation to the current time
 current_time = datetime.datetime.now()
-
 
 device_records = []
 

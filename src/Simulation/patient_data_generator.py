@@ -5,7 +5,7 @@ The script retrieves glucose thresholds and generates realistic glucose readings
 It produces metric records with user ID, device ID, timestamp, glucose reading, and coordinates.
 Finally, it collects, randomizes, and sorts these records by timestamp for realistic simulation output.
 """
-
+import bisect
 import datetime
 import random
 
@@ -83,6 +83,30 @@ def generate_nearby_coordinates(lat, lon):
     new_lon = random.uniform(lon - range_lon, lon + range_lon)
     return new_lat, new_lon
 
+def check_disconnection_periods(device_id, timestamp, disconnection_periods):
+    """
+    Check if the device is currently in any of its disconnection periods.
+
+    Args:
+        device_id (str): The ID of the device to check.
+        timestamp (datetime): The timestamp to check against.
+        disconnection_periods (dict): A dictionary containing lists of disconnection periods for each device.
+
+    Returns:
+        bool: True if the device is in a disconnection period, False otherwise.
+    """
+    if device_id not in disconnection_periods:
+        return False
+
+    periods = disconnection_periods[device_id]
+    # Using binary search to find the correct period for the given timestamp without iterating through all periods
+    start_times = [period["start"] for period in periods]
+    # The index where the timestamp would fit in the sorted start times
+    index = bisect.bisect_right(start_times, timestamp) - 1
+    if index >= 0 and periods[index]["start"] <= timestamp <= periods[index]["end"]:
+        return True
+
+    return False
 
 def generate_metric_record(patient, timestamp, disconnection_periods, user_behaviors):
     """
@@ -117,13 +141,9 @@ def generate_metric_record(patient, timestamp, disconnection_periods, user_behav
 
     # Check if the device is currently in a disconnection period.
     # If it is, no metric record will be generated for the duration of the disconnection.
-    if (
-        device_id in disconnection_periods
-        and disconnection_periods[device_id]["start"]
-        <= timestamp
-        <= disconnection_periods[device_id]["end"]
-    ):
+    if check_disconnection_periods(device_id, timestamp, disconnection_periods):
         return None
+
 
     min_glucose, max_glucose = get_threshold_for_patient(user_id)
 
@@ -186,6 +206,21 @@ next_expected_timestamps = {
     for uid, interval in user_device_interval
 }
 
+# To ensure that the maximum timestamp difference that be generated/allowed between the previous record(observation) 
+# and the next one for a patient is their user-specific interval + 59 seconds. User-specific interval ranges from 1 to 4 minutes.
+# So, max allowed time for eache user is their interval + 59 seconds.
+max_allowed_time = {
+    uid: datetime.timedelta(seconds=59)
+    for uid, interval in user_device_interval
+}
+
+# Initialize next_max_allowed_time and dynamically update it based on the next_expected_timestamps and max_allowed_time during data generation.
+# We add 59 seconds to the next_expected_timestamp to get the maximum allowed time for the next record.
+next_max_allowed_time = {
+    uid: next_expected_timestamps[uid] + max_allowed_time[uid]
+    for uid, _ in user_device_interval
+}
+
 # Records for users will be seen based on their interval
 # For example, if a user has an interval of 5 minutes, they will have a record every 5 minutes.
 # If a user has 1 minute, they will have a record every minute
@@ -196,36 +231,36 @@ for minute in range(total_duration):
     for patient in patients:
         user_id = patient["user_id"]
         
-        current_generation_time = last_observed_time + datetime.timedelta(
-            minutes=minute
-        )
-        # Checks if the current time has reached the next expected timestamp for the user
-        if current_generation_time >= next_expected_timestamps[user_id]:
-            # Getting the user-specific interval for generating records
-            interval = next(
-                interval for uid, interval in user_device_interval if uid == user_id
+        iteration_check_time = last_observed_time + datetime.timedelta(minutes=minute)
+        
+        # Check if it's time to generate a new record for this user
+        # The actual timestamp of the record (realistic_timestamp) is independently generated within the allowed range (next_expected_timestamps and next_max_allowed_time)
+        # But (realistic_timestamp) can be earlier or later than (iteration_check_time)
+        if iteration_check_time >= next_expected_timestamps[user_id]:
+            # Generating a realistic timestamp between next_expected_timestamp (inclusive) and next_max_allowed_time 
+            realistic_timestamp = random.uniform(
+                next_expected_timestamps[user_id].timestamp(),
+                next_max_allowed_time[user_id].timestamp()
             )
-            # Generating a random timestamp within the interval for more realistic data
-            random_seconds = random.randint(1, interval * 60 - 1)
-            realistic_timestamp = current_generation_time + datetime.timedelta(
-                seconds=random_seconds
-            )
-            # Checks if the realistic timestamp less than the next expected timestamp.
-            # It might seem redundant, but it ensures that we don't generate records beyond the next expected timestamp.
-            if realistic_timestamp < last_observed_time + datetime.timedelta(
-                minutes=minute + interval
-            ):  # Generate a metric record for the user
-                record = generate_metric_record(
-                    patient,
-                    realistic_timestamp.strftime("%Y-%m-%dT%H:%M:%S"),
-                    disconnection_periods,
-                    user_behaviors,
-                )
-                if record is not None:  
-                    records.append(record)
-                # Updating the next expected timestamp for when the next record should be generated
-                next_expected_timestamps[user_id] = (
-                    last_observed_time + datetime.timedelta(minutes=minute + interval)
-                )
+            realistic_timestamp = datetime.datetime.fromtimestamp(realistic_timestamp)
+            
+            # Generate a metric record for the user
+            record = generate_metric_record(
+                patient,
+                realistic_timestamp.strftime("%Y-%m-%dT%H:%M:%S"),
+                disconnection_periods,
+                user_behaviors)
+            
+            if record is not None:
+                records.append(record)
+                
+            # Updating the next expected timestamp for the user
+            interval = next(interval for uid, interval in user_device_interval if uid == user_id)
+            next_expected_timestamps[user_id] = realistic_timestamp + datetime.timedelta(minutes=interval)
+            
+            # Updating the next_max_allowed_time for the user
+            next_max_allowed_time[user_id] = next_expected_timestamps[user_id] + max_allowed_time[user_id]
+
+
 random.shuffle(records)
 records.sort(key=lambda x: x["timestamp"])
