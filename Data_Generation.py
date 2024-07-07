@@ -145,7 +145,7 @@ def continuous_data_generation():
     print("Generating data continuously")
     while True:
         generate_data()
-        time.sleep(15)
+        time.sleep(10)
 
 
 if __name__ == "__main__":
