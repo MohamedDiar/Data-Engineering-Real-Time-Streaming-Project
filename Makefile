@@ -298,9 +298,35 @@ reset-monitoring-directory:
 	@echo "Deleting monitoring directory..."
 	poetry run python monitoring_directory_creation.py
 
+# To install or copy the DuckDB CLI to the current directory
+.PHONY: install-duckdb
+DUCKDB_URL=https://github.com/duckdb/duckdb/releases/download/v1.0.0/duckdb_cli-linux-amd64.zip
+ZIP_FILE=duckdb_cli-linux-amd64.zip
+EXTRACTED_FILE=duckdb
+
+install-duckdb:
+	@if ! (find . -maxdepth 1 -type f -name "$(EXTRACTED_FILE)" | grep -q "$(EXTRACTED_FILE)"); then \
+		echo "DuckDB is not installed in the current directory. Searching the home directory."; \
+		DUCKDB_PATH=$$(find ~/ -type f -name "$(EXTRACTED_FILE)" 2>/dev/null | head -n 1); \
+		if [ -z "$$DUCKDB_PATH" ]; then \
+			echo "DuckDB is not installed in the home directory. Proceeding with installation."; \
+			wget $(DUCKDB_URL) -O $(ZIP_FILE); \
+			unzip $(ZIP_FILE); \
+			rm $(ZIP_FILE); \
+			chmod +x ./duckdb; \
+			echo "DuckDB has been installed successfully."; \
+		else \
+			echo "DuckDB found at $$DUCKDB_PATH. Copying to the current directory."; \
+			cp $$DUCKDB_PATH ./$(EXTRACTED_FILE); \
+		fi \
+	else \
+		echo "DuckDB Starting"; \
+	fi
+	
+
 # To install the MySQL extension in DuckDB
 .PHONY: install-mysql-extension
-install-mysql-extension:
+install-mysql-extension: install-duckdb
 	@./duckdb -c "INSTALL mysql; LOAD mysql;"
 
 host := $(shell grep -w '^host' .env | cut -d '=' -f2 | tr -d "'")
